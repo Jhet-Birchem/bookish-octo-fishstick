@@ -1,0 +1,18 @@
+[
+    {
+        "task": "Breathe",
+        "completed": false
+    },
+    {
+        "task": "Drink Water",
+        "completed": true
+    },
+    {
+        "task": "Sit Down",
+        "completed": false
+    },
+    {
+        "task": "Yay!",
+        "completed": true
+    }
+]
