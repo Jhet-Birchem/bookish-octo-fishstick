@@ -1,8 +1,8 @@
 import tkinter as tk
 from tkinter import ttk
-from pydub.generators import Sine
+import numpy as np
 import simpleaudio as sa
-import time
+import threading
 
 # Define piano keys (C4 to C5)
 keys = [
@@ -21,39 +21,47 @@ keys = [
     ("C5", 523.25),
 ]
 
-# Global variable to track the start time of a key press
-start_time = None
+# To handle the playback object
+playback_thread = None
+stop_thread = threading.Event()
 
-# Function to play a tone
-def play_tone(frequency, volume, duration):
-    # Generate the sine wave tone
-    sine_wave = Sine(frequency).to_audio_segment(duration=duration)
+# Function to generate a sine wave
+def generate_sine_wave(frequency, duration, volume):
+    sample_rate = 44100
+    t = np.linspace(0, duration, int(sample_rate * duration), False)
+    wave_data = 0.5 * volume * np.sin(2 * np.pi * frequency * t)
+    audio_data = np.int16(wave_data * 32767)
+    return audio_data
+
+# Function to continuously play a tone in a separate thread
+def play_tone(frequency, volume):
+    global playback_thread, stop_thread
+    stop_thread.clear()
     
-    # Adjust volume (volume range is 0 to 10)
-    sine_wave = sine_wave + (volume - 5) * 6  # Adjust to a range that's safe for 16-bit audio
+    def play():
+        while not stop_thread.is_set():
+            audio_data = generate_sine_wave(frequency, 0.1, volume)
+            play_obj = sa.play_buffer(audio_data, 1, 2, 44100)
+            play_obj.wait_done()
     
-    # Export to a raw audio format (WAV)
-    raw_audio = sine_wave.raw_data
-    
-    # Play the raw audio using simpleaudio
-    play_obj = sa.play_buffer(raw_audio, num_channels=1, bytes_per_sample=2, sample_rate=44100)
-    
-    # Wait for playback to finish before exiting
-    play_obj.wait_done()
+    playback_thread = threading.Thread(target=play)
+    playback_thread.start()
+
+# Function to stop playing the tone
+def stop_tone():
+    global stop_thread
+    stop_thread.set()
+    if playback_thread:
+        playback_thread.join()
 
 # Function to handle key press
-def key_pressed(event, frequency):
-    global start_time
-    start_time = time.time()
+def key_pressed(event, frequency, volume_slider):
+    volume = volume_slider.get() / 10
+    play_tone(frequency, volume)
 
 # Function to handle key release
-def key_released(event, frequency, volume_slider):
-    global start_time
-    if start_time:
-        duration = int((time.time() - start_time) * 1000)  # Duration in milliseconds
-        volume = volume_slider.get()
-        play_tone(frequency, volume, duration)
-        start_time = None
+def key_released(event):
+    stop_tone()
 
 # Create the main window
 root = tk.Tk()
@@ -76,8 +84,8 @@ for idx, (note, freq) in enumerate(keys):
     btn.grid(row=0, column=idx)
     
     # Bind key press and release events to each button
-    btn.bind("<ButtonPress-1>", lambda event, freq=freq: key_pressed(event, freq))
-    btn.bind("<ButtonRelease-1>", lambda event, freq=freq: key_released(event, freq, volume_slider))
+    btn.bind("<ButtonPress-1>", lambda event, freq=freq: key_pressed(event, freq, volume_slider))
+    btn.bind("<ButtonRelease-1>", lambda event: key_released(event))
 
 # Run the main event loop
 root.mainloop()
