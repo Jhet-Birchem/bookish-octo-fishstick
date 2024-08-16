@@ -1,11 +1,11 @@
 [
     {
         "task": "Breathe",
-        "completed": true
+        "completed": false
     },
     {
         "task": "Drink Water",
-        "completed": true
+        "completed": false
     },
     {
         "task": "Sit Down",
@@ -13,6 +13,6 @@
     },
     {
         "task": "Yay!",
-        "completed": true
+        "completed": false
     }
 ]
