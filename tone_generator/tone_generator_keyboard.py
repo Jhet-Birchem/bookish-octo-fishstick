@@ -2,8 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 import numpy as np
 import simpleaudio as sa
-import threading
-import time
+import asyncio
 
 # Define piano keys (C4 to C5)
 keys = [
@@ -23,11 +22,10 @@ keys = [
 ]
 
 # Global variables for playback control
-playback_thread = None
-stop_thread = threading.Event()
-play_event = threading.Event()
 current_frequency = None
 current_volume = 0.5
+play_event = asyncio.Event()
+stop_event = asyncio.Event()
 
 # Function to generate a sine wave
 def generate_sine_wave(frequency, duration, volume):
@@ -38,30 +36,27 @@ def generate_sine_wave(frequency, duration, volume):
     audio_data = np.int16(wave_data * 32767)
     return audio_data
 
-# Function to manage playback in a loop
-def playback_manager():
+# Async function to manage playback
+async def playback_manager():
     global current_frequency, current_volume
 
-    while not stop_thread.is_set():
+    while not stop_event.is_set():
         print("Waiting for play event...")
-        play_event.wait()  # Wait for a key press to start playback
+        await play_event.wait()
         print("Play event triggered.")
 
-        while play_event.is_set():  # Continue playing while key is pressed
+        while play_event.is_set() and not stop_event.is_set():
             if current_frequency is not None:
                 print(f"Playing tone: frequency={current_frequency}, volume={current_volume}")
-                audio_data = generate_sine_wave(current_frequency, 0.1, current_volume)
-                try:
-                    play_obj = sa.play_buffer(audio_data, 1, 2, 44100)
-                    play_obj.wait_done()
-                    print("Tone playback completed.")
-                except Exception as e:
-                    print(f"Error during playback: {e}")
-                    stop_thread.set()
-                    break
-            time.sleep(0.01)  # Small delay to manage CPU load and timing
+                audio_data = generate_sine_wave(current_frequency, 0.2, current_volume)
+                play_obj = sa.play_buffer(audio_data, 1, 2, 44100)
+                play_obj.wait_done()  # Wait for the audio playback to complete
 
-    print("Playback thread terminating...")
+            await asyncio.sleep(0.01)  # Small delay for the event loop to process other tasks
+
+        print("Playback stopped.")
+
+    print("Playback manager exiting...")
 
 # Function to start playing a tone
 def start_playback(frequency, volume):
@@ -87,9 +82,15 @@ def key_released(event):
     print("Key released.")
     stop_playback()
 
+# Function to safely exit the program
+def on_closing():
+    stop_event.set()  # Signal the playback manager to exit
+    root.quit()
+
 # Create the main window
 root = tk.Tk()
 root.title("Simple Piano")
+root.protocol("WM_DELETE_WINDOW", on_closing)
 
 # Create a frame for the piano keys
 piano_frame = tk.Frame(root)
@@ -111,17 +112,11 @@ for idx, (note, freq) in enumerate(keys):
     btn.bind("<ButtonPress-1>", lambda event, freq=freq: key_pressed(event, freq, volume_slider))
     btn.bind("<ButtonRelease-1>", lambda event: key_released(event))
 
-# Start the playback thread
-playback_thread = threading.Thread(target=playback_manager)
-playback_thread.start()
-print("Playback thread started.")
+# Start the playback manager as an asyncio task
+async def main():
+    asyncio.create_task(playback_manager())
+    print("Playback manager started.")
+    root.mainloop()
 
 # Run the main event loop
-print("Starting GUI...")
-root.mainloop()
-
-# Signal the playback thread to stop and wait for it to finish
-stop_thread.set()
-play_event.set()  # Trigger the thread to exit the loop
-playback_thread.join()
-print("GUI loop ended. Program terminated.")
+asyncio.run(main())
