@@ -21,46 +21,56 @@ keys = [
     ("C5", 523.25),
 ]
 
-# To handle the playback object
+# Global variables for playback control
 playback_thread = None
 stop_thread = threading.Event()
 
 # Function to generate a sine wave
 def generate_sine_wave(frequency, duration, volume):
+    print(f"Generating sine wave: frequency={frequency}, duration={duration}, volume={volume}")
     sample_rate = 44100
     t = np.linspace(0, duration, int(sample_rate * duration), False)
     wave_data = 0.5 * volume * np.sin(2 * np.pi * frequency * t)
     audio_data = np.int16(wave_data * 32767)
+    print("Sine wave generated.")
     return audio_data
 
 # Function to continuously play a tone in a separate thread
 def play_tone(frequency, volume):
     global playback_thread, stop_thread
+    print(f"Starting tone: frequency={frequency}, volume={volume}")
     stop_thread.clear()
-    
+
     def play():
         while not stop_thread.is_set():
+            print("Playing tone...")
             audio_data = generate_sine_wave(frequency, 0.1, volume)
             play_obj = sa.play_buffer(audio_data, 1, 2, 44100)
             play_obj.wait_done()
-    
+        print("Stopped playing tone.")
+
     playback_thread = threading.Thread(target=play)
     playback_thread.start()
+    print("Tone playback thread started.")
 
 # Function to stop playing the tone
 def stop_tone():
     global stop_thread
+    print("Stopping tone...")
     stop_thread.set()
     if playback_thread:
         playback_thread.join()
+    print("Tone stopped.")
 
 # Function to handle key press
 def key_pressed(event, frequency, volume_slider):
+    print(f"Key pressed: frequency={frequency}")
     volume = volume_slider.get() / 10
     play_tone(frequency, volume)
 
 # Function to handle key release
 def key_released(event):
+    print("Key released.")
     stop_tone()
 
 # Create the main window
@@ -88,4 +98,6 @@ for idx, (note, freq) in enumerate(keys):
     btn.bind("<ButtonRelease-1>", lambda event: key_released(event))
 
 # Run the main event loop
+print("Starting GUI...")
 root.mainloop()
+print("GUI loop ended.")
