@@ -29,10 +29,14 @@ stop_thread = threading.Event()
 def generate_sine_wave(frequency, duration, volume):
     print(f"Generating sine wave: frequency={frequency}, duration={duration}, volume={volume}")
     sample_rate = 44100
-    t = np.linspace(0, duration, int(sample_rate * duration), False)
-    wave_data = 0.5 * volume * np.sin(2 * np.pi * frequency * t)
-    audio_data = np.int16(wave_data * 32767)
-    print("Sine wave generated.")
+    try:
+        t = np.linspace(0, duration, int(sample_rate * duration), False)
+        wave_data = 0.5 * volume * np.sin(2 * np.pi * frequency * t)
+        audio_data = np.int16(wave_data * 32767)
+        print("Sine wave generated.")
+    except Exception as e:
+        print(f"Error during sine wave generation: {e}")
+        raise e
     return audio_data
 
 # Function to continuously play a tone in a separate thread
@@ -43,10 +47,15 @@ def play_tone(frequency, volume):
 
     def play():
         while not stop_thread.is_set():
-            print("Playing tone...")
-            audio_data = generate_sine_wave(frequency, 0.1, volume)
-            play_obj = sa.play_buffer(audio_data, 1, 2, 44100)
-            play_obj.wait_done()
+            try:
+                print("Playing tone...")
+                audio_data = generate_sine_wave(frequency, 0.1, volume)
+                play_obj = sa.play_buffer(audio_data, 1, 2, 44100)
+                play_obj.wait_done()
+            except Exception as e:
+                print(f"Error during playback: {e}")
+                stop_thread.set()
+                break
         print("Stopped playing tone.")
 
     playback_thread = threading.Thread(target=play)
