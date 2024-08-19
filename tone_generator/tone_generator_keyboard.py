@@ -4,7 +4,7 @@ import numpy as np
 import simpleaudio as sa
 import asyncio
 
-# Define piano keys (C4 to C5)
+# Define piano keys (Octave C4 to C5)
 keys = [
     ("C4", 261.63),
     ("C#4", 277.18),
