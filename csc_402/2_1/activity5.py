@@ -6,13 +6,15 @@ import numpy as np
 print('############################')
 print('# Problem 1 - Multiplication')
 print('############################')
-A = np.array([[8,6],[7,5]])
-B = np.array([[3,0],[9,9]])
+#A = np.array([[8,6],[7,5]])
+#B = np.array([[3,0],[9,9]])
+A = np.array([[8,6,7,5],[3,0,9,9],[1,3,3,7]])
+B = np.array([[1,7],[3,3],[3,3],[7,1]])
 C = np.matmul(A,B)
 print('C =\n',C)
 
-A = [[8,6],[7,5]] #Here A is just a list
-B = [[3,0],[9,9]] #Here B is just a list
+#A = [[8,6],[7,5]] #Here A is just a list
+#B = [[3,0],[9,9]] #Here B is just a list
 def mat_mul(A,B):
     """
     This function computes C = A*B
@@ -66,6 +68,8 @@ A = np.array([[8,6],[7,5]])
 B = np.array([[3,0],[9,9]])
 print('A =\n',A)
 print('A^(-1) =\n',np.linalg.inv(A))
+print('B =\n',B)
+print('B^(-1) =\n',np.linalg.inv(B))
 
 A = np.array([[8,6,7],[5,3,0],[9,4,2]])
 print('A =\n',A)
