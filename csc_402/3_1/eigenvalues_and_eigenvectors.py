@@ -1,8 +1,8 @@
 import numpy as np
 
-A = np.array([[1,3],[3,-7]])
+A = np.array([[3,-2],[-2,6]])
 print('A =\n',A)
-v = np.array([3,1])
+v = np.array([7,2])
 print('v =',v)
 print('Av =',np.matmul(A,v))
 print('2v =',2*v)
@@ -22,7 +22,7 @@ print('===============================================')
 
 #CLAIM: A = S*L*S^T
 
-A = np.array([[1,3],[3,-7]])
+A = np.array([[3,-2],[-2,6]])
 #A = np.array([[1,2,3],[2,4,5],[3,5,6]])
 print('A =\n',A)
 At = np.transpose(A)
